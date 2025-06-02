@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capy Run!</title>
+    <style>
+        *{
+            padding:0px; 
+            margin:0px}
+        /* Aligns the display to the screen */
+        body {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            height:100vh;
+            /* Prevents inappropriate touch actions */
+            user-select: none;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            outline: none;
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+        }
+        /* Gives the game window a small border */
+        canvas {
+            border: 1px solid grey;}
+    </style>
+    <script src="index.js" defer type="module"></script>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    
+</body>
+</html>
