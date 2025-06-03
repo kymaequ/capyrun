@@ -6,24 +6,32 @@ import Score from "./Score.js";
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const GAME_SPEED_START = 0.75; // 1.0
+const GAME_SPEED_START = 0.75; // 1.0;
 const GAME_SPEED_INCREMENT = 0.00001;
 
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 200;
-const PLAYER_WIDTH = 100 / 1.7; //58
-const PLAYER_HEIGHT = 120 / 1.7; //62
+const PLAYER_WIDTH = 100 / 1.7; //58;
+const PLAYER_HEIGHT = 120 / 1.7; //62;
 const MAX_JUMP_HEIGHT = GAME_HEIGHT;
 const MIN_JUMP_HEIGHT = 150;
 const GROUND_WIDTH = 2400;
-const GROUND_HEIGHT = 24;
+const GROUND_HEIGHT = 72;
 const GROUND_AND_OBSTACLE_SPEED = 0.5;
 
 const OBSTACLE_CONFIG = [
-    {width:185/3.5, height: 250/3.5, image:"images/obstacle1.png"},
-    {width:140/3.5, height: 244/3.5, image:"images/obstacle2.png"},
-    {width:150/3.5, height: 170/3.5, image:"images/obstacle3.png"},
-]
+    {width:185/3.5, height: 250/3.5, image:"images/obstacle1.png"}, //bamboo
+    {width:140/3.5, height: 244/3.5, image:"images/obstacle2.png"}, //bonsai
+    {width:150/3, height: 170/3, image:"images/obstacle3.png"}, //bath
+];
+
+// Orange spinning animation sprites (up, right, down, left)
+const ORANGE_SPRITES_CONFIG = [
+    {width:110/2.5, height: 110/2.5, image:"images/orange-up.png"},
+    {width:110/2.5, height: 110/2.5, image:"images/orange-right.png"},
+    {width:110/2.5, height: 110/2.5, image:"images/orange-down.png"},
+    {width:110/2.5, height: 110/2.5, image:"images/orange-left.png"},
+];
 
 //Game Objects
 let player = null;
@@ -37,6 +45,52 @@ let gameSpeed = GAME_SPEED_START;
 let gameOver = false;
 let hasAddedEventListenersForRestart = false;
 let waitingToStart = true;
+
+// Sound Effects
+let gameOverSound = null;
+let startJingle = null;
+
+function createSounds() {
+    gameOverSound = new Audio();
+    gameOverSound.src = 'sounds/gameover.mp3'; // Replace with your sound file path
+    gameOverSound.volume = 0.5; // Adjust volume (0.0 to 1.0)
+
+    startJingle = new Audio();
+    startJingle.src = 'sounds/nes-startup.mp3'; // Replace with your jingle file path
+    startJingle.volume = 0.7; // Adjust volume (0.0 to 1.0)
+}
+
+function playGameOverSound() {
+    if (gameOverSound) {
+        // Reset the sound to beginning in case it's already playing
+        gameOverSound.currentTime = 0;
+        
+        // Play the sound (wrap in try-catch for browser compatibility)
+        try {
+            gameOverSound.play().catch(e => {
+                console.log('Could not play game over sound:', e);
+            });
+        } catch (e) {
+            console.log('Audio not supported:', e);
+        }
+    }
+}
+
+function playStartJingle() {
+    if (startJingle) {
+        // Reset the sound to beginning in case it's already playing
+        startJingle.currentTime = 0;
+        
+        // Play the sound (wrap in try-catch for browser compatibility)
+        try {
+            startJingle.play().catch(e => {
+                console.log('Could not play start jingle:', e);
+            });
+        } catch (e) {
+            console.log('Audio not supported:', e);
+        }
+    }
+}
 
 function createSprites(){
     const playerWidthInGame = PLAYER_WIDTH * scaleRatio;
@@ -64,6 +118,7 @@ function createSprites(){
         scaleRatio,
     );
 
+    //Create ground obstacle images
     const obstacleImages = OBSTACLE_CONFIG.map(obstacle =>{
         const image = new Image();
         image.src = obstacle.image;
@@ -74,9 +129,21 @@ function createSprites(){
         };
     });
 
+    // Create orange spinning sprites
+    const orangeSprites = ORANGE_SPRITES_CONFIG.map(sprite =>{
+        const image = new Image();
+        image.src = sprite.image;
+        return {
+            image:image,
+            width: sprite.width * scaleRatio,
+            height: sprite.height * scaleRatio,
+        };
+    });
+
     obstacleController = new ObstaclesController(
         ctx, 
         obstacleImages, 
+        orangeSprites,
         scaleRatio, 
         GROUND_AND_OBSTACLE_SPEED
     )
@@ -93,6 +160,14 @@ function setScreen(){
 
 //Sets the screen to be as wide as the window
 setScreen();
+//Initialize the sounds
+createSounds();
+
+// Play the start jingle when the page loads
+// Add a small delay to ensure everything is loaded
+setTimeout(() => {
+    playStartJingle();
+}, 500);
 
 //Use setTimeout on Safari mobile rotation otherwise works fine on desktop
 //Dynamically resizes the screen if size changes
@@ -154,11 +229,11 @@ function reset(){
 }
 
 function showStartGameText() {
-    const fontSize = 10 * scaleRatio;
+    const fontSize = 20 * scaleRatio;
     //ctx.font = `${fontSize}px Verdana`;
     ctx.font = `${fontSize}px "Press Start 2P", monospace`;
     ctx.fillStyle = "white";
-    const x = canvas.width / 5;
+    const x = canvas.width / 10;
     const y = canvas.height / 2;
     ctx.fillText("Tap Screen or Press Space to Start", x, y);
 }
@@ -196,6 +271,7 @@ function gameLoop(currentTime) {
 
     if(!gameOver && obstacleController.collideWith(player)){
         gameOver = true;
+        playGameOverSound();
         setupGameReset();
         score.setHighScore();
     };

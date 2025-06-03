@@ -43,6 +43,11 @@ export default class Player{
         this.capyRunImages.push(capyRunImage3);
         this.capyRunImages.push(capyRunImage4);
 
+        // Create and load the jump sound effect
+        this.jumpSound = new Audio();
+        this.jumpSound.src = 'sounds/jump.mp3'; // Replace with your sound file path
+        this.jumpSound.volume = 0.4; // Adjust volume (0.0 to 1.0)
+
         //keyboard
         window.removeEventListener('keydown', this.keydown);
         window.removeEventListener('keyup', this.keyup);
@@ -76,6 +81,20 @@ export default class Player{
         };
     };
 
+    playJumpSound(){
+        // Reset the sound to beginning in case it's already playing
+        this.jumpSound.currentTime = 0;
+        
+        // Play the sound (wrap in try-catch for browser compatibility)
+        try {
+            this.jumpSound.play().catch(e => {
+                console.log('Could not play jump sound:', e);
+            });
+        } catch (e) {
+            console.log('Audio not supported:', e);
+        }
+    }
+
     update(gameSpeed, frameTimeDelta){
         this.run(gameSpeed, frameTimeDelta);
 
@@ -88,6 +107,10 @@ export default class Player{
 
     jump(frameTimeDelta){
         if(this.jumpPressed){
+            // Play sound only when jump first starts (not during continuous jumping)
+            if (!this.jumpInProgress) {
+                this.playJumpSound();
+            }
             this.jumpInProgress = true;
         };
 
@@ -130,18 +153,6 @@ export default class Player{
         }
         this.walkAnimationTimer -= frameTimeDelta * gameSpeed;
     }
-
-    /* run(gameSpeed, frameTimeDelta){
-        if(this.walkAnimationTimer <=0) {
-            if(this.image === this.capyRunImages[0]) {
-                this.image = this.capyRunImages[1];
-            } else{
-                this.image = this.capyRunImages[0];
-            }
-            this.walkAnimationTimer = this.WALK_ANIMATION_TIMER;
-        }
-        this.walkAnimationTimer -= frameTimeDelta * gameSpeed;
-    } */
 
     draw(){
         this.ctx.drawImage(
