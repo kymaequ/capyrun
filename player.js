@@ -23,17 +23,25 @@ export default class Player{
         this.yStandingPosition = this.y;
 
         this.standingStillImage = new Image();
-        this.standingStillImage.src = "images/standing_still.png";
+        this.standingStillImage.src = "images/capy_stand.png";
         this.image = this.standingStillImage;
 
         const capyRunImage1 = new Image();
-        capyRunImage1.src = "images/dino_run1.png";
+        capyRunImage1.src = "images/capy_run1.png";
 
         const capyRunImage2 = new Image();
-        capyRunImage2.src = "images/dino_run2.png";
+        capyRunImage2.src = "images/capy_run3.png";
+
+        const capyRunImage3 = new Image();
+        capyRunImage3.src = "images/capy_run2.png";
+
+        const capyRunImage4 = new Image();
+        capyRunImage4.src = "images/capy_run3.png";
 
         this.capyRunImages.push(capyRunImage1);
         this.capyRunImages.push(capyRunImage2);
+        this.capyRunImages.push(capyRunImage3);
+        this.capyRunImages.push(capyRunImage4);
 
         //keyboard
         window.removeEventListener('keydown', this.keydown);
@@ -111,6 +119,10 @@ export default class Player{
         if(this.walkAnimationTimer <=0) {
             if(this.image === this.capyRunImages[0]) {
                 this.image = this.capyRunImages[1];
+            } else if (this.image === this.capyRunImages[1]) {
+                this.image = this.capyRunImages[2];
+            } else if (this.image === this.capyRunImages[2]) {
+                this.image = this.capyRunImages[3];
             } else{
                 this.image = this.capyRunImages[0];
             }
@@ -118,6 +130,18 @@ export default class Player{
         }
         this.walkAnimationTimer -= frameTimeDelta * gameSpeed;
     }
+
+    /* run(gameSpeed, frameTimeDelta){
+        if(this.walkAnimationTimer <=0) {
+            if(this.image === this.capyRunImages[0]) {
+                this.image = this.capyRunImages[1];
+            } else{
+                this.image = this.capyRunImages[0];
+            }
+            this.walkAnimationTimer = this.WALK_ANIMATION_TIMER;
+        }
+        this.walkAnimationTimer -= frameTimeDelta * gameSpeed;
+    } */
 
     draw(){
         this.ctx.drawImage(
