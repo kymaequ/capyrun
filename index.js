@@ -27,10 +27,10 @@ const OBSTACLE_CONFIG = [
 
 // Orange spinning animation sprites (up, right, down, left)
 const ORANGE_SPRITES_CONFIG = [
-    {width:110/2.5, height: 110/2.5, image:"images/orange-up.png"},
-    {width:110/2.5, height: 110/2.5, image:"images/orange-right.png"},
-    {width:110/2.5, height: 110/2.5, image:"images/orange-down.png"},
-    {width:110/2.5, height: 110/2.5, image:"images/orange-left.png"},
+    {width:110/3, height: 110/3, image:"images/orange-up.png"},
+    {width:110/3, height: 110/3, image:"images/orange-right.png"},
+    {width:110/3, height: 110/3, image:"images/orange-down.png"},
+    {width:110/3, height: 110/3, image:"images/orange-left.png"},
 ];
 
 //Game Objects
@@ -165,9 +165,9 @@ createSounds();
 
 // Play the start jingle when the page loads
 // Add a small delay to ensure everything is loaded
-setTimeout(() => {
+/*setTimeout(() => {
     playStartJingle();
-}, 500);
+}, 500);*/
 
 //Use setTimeout on Safari mobile rotation otherwise works fine on desktop
 //Dynamically resizes the screen if size changes
@@ -221,6 +221,12 @@ function setupGameReset(){
 function reset(){
     hasAddedEventListenersForRestart = false;
     gameOver = false;
+
+    // Play the start jingle when the game begins (user has interacted)
+    if (waitingToStart) {
+        playStartJingle();
+    }
+
     waitingToStart = false;
     ground.reset();
     obstacleController.reset();

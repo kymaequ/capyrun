@@ -90,7 +90,7 @@ export default class ObstaclesController {
         obstacle.SPIN_SPEED = 150; // Milliseconds between sprite changes (adjust for faster/slower spin)
 
         // Add speed multiplier for oranges
-        obstacle.speedMultiplier = 1.5; // Makes oranges 50% faster (adjust as needed)
+        obstacle.speedMultiplier = 1.3; // Makes oranges 50% faster (adjust as needed)
         
         this.obstacles.push(obstacle);
     }
