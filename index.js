@@ -49,14 +49,15 @@ let waitingToStart = true;
 // Sound Effects
 let gameOverSound = null;
 let startJingle = null;
+let audioInitialized = false;
 
 function createSounds() {
     gameOverSound = new Audio();
-    gameOverSound.src = 'sounds/gameover.mp3'; // Replace with your sound file path
+    gameOverSound.src = 'sounds/gameover.mp3'; 
     gameOverSound.volume = 0.5; // Adjust volume (0.0 to 1.0)
 
     startJingle = new Audio();
-    startJingle.src = 'sounds/nes-startup.mp3'; // Replace with your jingle file path
+    startJingle.src = 'sounds/nes-startup.mp3'; 
     startJingle.volume = 0.7; // Adjust volume (0.0 to 1.0)
 }
 
@@ -76,7 +77,21 @@ function playGameOverSound() {
     }
 }
 
-function playStartJingle() {
+function initializeAudio() {
+    if (!audioInitialized && startJingle) {
+        // On mobile, we need to "prime" the audio context
+        // Try to play and immediately pause to unlock audio
+        startJingle.play().then(() => {
+            startJingle.pause();
+            startJingle.currentTime = 0;
+            audioInitialized = true;
+        }).catch(e => {
+            console.log('Audio initialization failed, will try again on user interaction');
+        });
+    }
+}
+
+/*function playStartJingle() {
     if (startJingle) {
         // Reset the sound to beginning in case it's already playing
         startJingle.currentTime = 0;
@@ -85,6 +100,36 @@ function playStartJingle() {
         try {
             startJingle.play().catch(e => {
                 console.log('Could not play start jingle:', e);
+            });
+        } catch (e) {
+            console.log('Audio not supported:', e);
+        }
+    }
+}*/
+
+function playStartJingle() {
+    if (startJingle) {
+        // Try to initialize audio first if not done already
+        if (!audioInitialized) {
+            initializeAudio();
+        }
+        
+        // Reset the sound to beginning in case it's already playing
+        startJingle.currentTime = 0;
+        
+        // Play the sound (wrap in try-catch for browser compatibility)
+        try {
+            startJingle.play().catch(e => {
+                console.log('Could not play start jingle:', e);
+                // Try initializing audio and playing again
+                if (!audioInitialized) {
+                    initializeAudio();
+                    setTimeout(() => {
+                        startJingle.play().catch(e2 => {
+                            console.log('Second attempt to play start jingle failed:', e2);
+                        });
+                    }, 100);
+                }
             });
         } catch (e) {
             console.log('Audio not supported:', e);
@@ -213,7 +258,15 @@ function setupGameReset(){
 
         setTimeout(()=>{
             window.addEventListener("keyup", reset,{ once:true });
-            window.addEventListener("touchstart", reset,{ once:true });
+            /*window.addEventListener("touchstart", reset,{ once:true });
+        }, 1000);*/
+            window.addEventListener("touchstart", (e) => {
+                // Re-initialize audio if needed
+                if (!audioInitialized) {
+                    initializeAudio();
+                }
+                reset();
+            }, { once:true });
         }, 1000);
     }
 }
@@ -301,4 +354,11 @@ function gameLoop(currentTime) {
 requestAnimationFrame(gameLoop);
 
 window.addEventListener("keyup", reset,{ once:true });
-window.addEventListener("touchstart", reset,{ once:true });
+window.addEventListener("touchstart", (e) => {
+    // Initialize audio on first touch (mobile requirement)
+    if (!audioInitialized) {
+        initializeAudio();
+    }
+    reset();
+}, { once:true });
+/*window.addEventListener("touchstart", reset,{ once:true });*/
