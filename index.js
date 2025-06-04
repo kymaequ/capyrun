@@ -58,7 +58,7 @@ function createSounds() {
 
     startJingle = new Audio();
     startJingle.src = 'sounds/nes-startup.mp3'; 
-    startJingle.volume = 0.7; // Adjust volume (0.0 to 1.0)
+    startJingle.volume = 0.5; // Adjust volume (0.0 to 1.0)
 }
 
 function playGameOverSound() {
