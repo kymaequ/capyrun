@@ -40,7 +40,7 @@ export default class ObstaclesController {
 
     createObstacle(){
         // Randomly choose between ground and flying obstacle
-        const isFlying = Math.random() < 0.4; // 40% chance for flying obstacles
+        const isFlying = Math.random() < 0.2; // 40% chance for flying obstacles
         
         if (isFlying && this.orangeSprites.length > 0) {
             this.createSpinningOrange();
@@ -90,7 +90,7 @@ export default class ObstaclesController {
         obstacle.SPIN_SPEED = 150; // Milliseconds between sprite changes (adjust for faster/slower spin)
 
         // Add speed multiplier for oranges
-        obstacle.speedMultiplier = 1.3; // Makes oranges 50% faster (adjust as needed)
+        obstacle.speedMultiplier = 1.2; // Makes oranges faster (adjust as needed)
         
         this.obstacles.push(obstacle);
     }

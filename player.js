@@ -26,6 +26,10 @@ export default class Player{
         this.standingStillImage.src = "images/capy_stand.png";
         this.image = this.standingStillImage;
 
+        // Add the lose sprite image
+        this.loseImage = new Image();
+        this.loseImage.src = "images/capy_lose.png";
+
         const capyRunImage1 = new Image();
         capyRunImage1.src = "images/capy_run1.png";
 
@@ -80,6 +84,14 @@ export default class Player{
             this.jumpPressed = false;
         };
     };
+
+    setLoseSprite() {
+        this.image = this.loseImage;
+    }
+
+    resetSprite() {
+        this.image = this.standingStillImage;
+    }
 
     playJumpSound(){
         // Reset the sound to beginning in case it's already playing

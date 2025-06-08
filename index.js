@@ -284,6 +284,7 @@ function reset(){
     ground.reset();
     obstacleController.reset();
     score.reset();
+    player.resetSprite();
     gameSpeed = GAME_SPEED_START;
 }
 
@@ -330,6 +331,7 @@ function gameLoop(currentTime) {
 
     if(!gameOver && obstacleController.collideWith(player)){
         gameOver = true;
+        player.setLoseSprite(); // Change sprite to gameover sprite
         playGameOverSound();
         setupGameReset();
         score.setHighScore();
