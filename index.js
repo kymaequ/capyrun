@@ -50,15 +50,26 @@ let waitingToStart = true;
 let gameOverSound = null;
 let startJingle = null;
 let audioInitialized = false;
+let audioUnlocked = false;
 
 function createSounds() {
     gameOverSound = new Audio();
     gameOverSound.src = 'sounds/gameover.mp3'; 
     gameOverSound.volume = 0.5; // Adjust volume (0.0 to 1.0)
 
+
     startJingle = new Audio();
     startJingle.src = 'sounds/nes-startup.mp3'; 
     startJingle.volume = 0.5; // Adjust volume (0.0 to 1.0)
+    startJingle.preload = 'auto'; //Preload the audio
+
+    startJingle.addEventListener('canplaythrough', () => {
+        console.log('Start jingle loaded and ready to play');
+    });
+    
+    startJingle.addEventListener('error', (e) => {
+        console.error('Error loading start jingle:', e);
+    });
 }
 
 function playGameOverSound() {
@@ -91,6 +102,27 @@ function initializeAudio() {
     }
 }
 
+// Improved audio unlock function
+async function unlockAudio() {
+    if (audioUnlocked) return true;
+    
+    try {
+        // Create a short silent audio to unlock the context
+        const silentAudio = new Audio();
+        silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+        
+        await silentAudio.play();
+        silentAudio.pause();
+        
+        audioUnlocked = true;
+        console.log('Audio context unlocked');
+        return true;
+    } catch (e) {
+        console.log('Failed to unlock audio:', e);
+        return false;
+    }
+}
+
 /*function playStartJingle() {
     if (startJingle) {
         // Reset the sound to beginning in case it's already playing
@@ -107,7 +139,7 @@ function initializeAudio() {
     }
 }*/
 
-function playStartJingle() {
+/*function playStartJingle() {
     if (startJingle) {
         // Try to initialize audio first if not done already
         if (!audioInitialized) {
@@ -134,6 +166,49 @@ function playStartJingle() {
         } catch (e) {
             console.log('Audio not supported:', e);
         }
+    }
+}*/
+
+async function playStartJingle() {
+    console.log('Attempting to play start jingle...');
+    
+    if (!startJingle) {
+        console.log('Start jingle not initialized');
+        return;
+    }
+    
+    try {
+        // Ensure audio is unlocked first
+        await unlockAudio();
+        
+        // Reset the audio to beginning
+        startJingle.currentTime = 0;
+        
+        // Wait for the audio to be ready if it's not already
+        if (startJingle.readyState < 3) { // HAVE_FUTURE_DATA
+            console.log('Waiting for audio to load...');
+            await new Promise((resolve, reject) => {
+                const onCanPlay = () => {
+                    startJingle.removeEventListener('canplaythrough', onCanPlay);
+                    startJingle.removeEventListener('error', onError);
+                    resolve();
+                };
+                const onError = (e) => {
+                    startJingle.removeEventListener('canplaythrough', onCanPlay);
+                    startJingle.removeEventListener('error', onError);
+                    reject(e);
+                };
+                startJingle.addEventListener('canplaythrough', onCanPlay);
+                startJingle.addEventListener('error', onError);
+            });
+        }
+        
+        // Now try to play
+        await startJingle.play();
+        console.log('Start jingle playing successfully');
+        
+    } catch (e) {
+        console.log('Could not play start jingle:', e);
     }
 }
 
@@ -257,27 +332,26 @@ function setupGameReset(){
         hasAddedEventListenersForRestart = true;
 
         setTimeout(()=>{
-            window.addEventListener("keyup", reset,{ once:true });
-            /*window.addEventListener("touchstart", reset,{ once:true });
-        }, 1000);*/
-            window.addEventListener("touchstart", (e) => {
-                // Re-initialize audio if needed
-                if (!audioInitialized) {
-                    initializeAudio();
-                }
+            window.addEventListener("keyup", async (e) => {
+                await unlockAudio();
                 reset();
-            }, { once:true });
+            }, { once: true });
+            
+            window.addEventListener("touchstart", async (e) => {
+                await unlockAudio();
+                reset();
+            }, { once: true });
         }, 1000);
     }
 }
 
-function reset(){
+async function reset(){
     hasAddedEventListenersForRestart = false;
     gameOver = false;
 
     // Play the start jingle when the game begins (user has interacted)
     if (waitingToStart) {
-        playStartJingle();
+        await playStartJingle();
     }
 
     waitingToStart = false;
@@ -355,12 +429,14 @@ function gameLoop(currentTime) {
 }
 requestAnimationFrame(gameLoop);
 
-window.addEventListener("keyup", reset,{ once:true });
-window.addEventListener("touchstart", (e) => {
-    // Initialize audio on first touch (mobile requirement)
-    if (!audioInitialized) {
-        initializeAudio();
-    }
+// Modified event listeners to ensure proper audio unlock
+window.addEventListener("keyup", async (e) => {
+    await unlockAudio();
     reset();
-}, { once:true });
+}, { once: true });
+
+window.addEventListener("touchstart", async (e) => {
+    await unlockAudio();
+    reset();
+}, { once: true });
 /*window.addEventListener("touchstart", reset,{ once:true });*/
