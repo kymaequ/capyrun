@@ -43,170 +43,74 @@ let scaleRatio = null;
 let previousTime = null;
 let gameSpeed = GAME_SPEED_START;
 let gameOver = false;
-let hasAddedEventListenersForRestart = false;
 let waitingToStart = true;
 
 // Sound Effects
 let gameOverSound = null;
 let startJingle = null;
-let audioInitialized = false;
 let audioUnlocked = false;
 
 function createSounds() {
     gameOverSound = new Audio();
     gameOverSound.src = 'sounds/gameover.mp3'; 
-    gameOverSound.volume = 0.5; // Adjust volume (0.0 to 1.0)
-
+    gameOverSound.volume = 0.5;
 
     startJingle = new Audio();
     startJingle.src = 'sounds/nes-startup.mp3'; 
-    startJingle.volume = 0.5; // Adjust volume (0.0 to 1.0)
-    startJingle.preload = 'auto'; //Preload the audio
-
-    startJingle.addEventListener('canplaythrough', () => {
-        console.log('Start jingle loaded and ready to play');
-    });
-    
-    startJingle.addEventListener('error', (e) => {
-        console.error('Error loading start jingle:', e);
-    });
+    startJingle.volume = 0.5;
+    startJingle.preload = 'auto';
 }
 
 function playGameOverSound() {
-    if (gameOverSound) {
-        // Reset the sound to beginning in case it's already playing
+    if (gameOverSound && audioUnlocked) {
         gameOverSound.currentTime = 0;
-        
-        // Play the sound (wrap in try-catch for browser compatibility)
-        try {
-            gameOverSound.play().catch(e => {
-                console.log('Could not play game over sound:', e);
-            });
-        } catch (e) {
-            console.log('Audio not supported:', e);
-        }
-    }
-}
-
-function initializeAudio() {
-    if (!audioInitialized && startJingle) {
-        // On mobile, we need to "prime" the audio context
-        // Try to play and immediately pause to unlock audio
-        startJingle.play().then(() => {
-            startJingle.pause();
-            startJingle.currentTime = 0;
-            audioInitialized = true;
-        }).catch(e => {
-            console.log('Audio initialization failed, will try again on user interaction');
+        gameOverSound.play().catch(e => {
+            console.log('Could not play game over sound:', e);
         });
     }
 }
 
-// Improved audio unlock function
 async function unlockAudio() {
     if (audioUnlocked) return true;
     
     try {
-        // Create a short silent audio to unlock the context
-        const silentAudio = new Audio();
-        silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+        // Try to play and immediately pause both sounds to unlock audio context
+        if (startJingle) {
+            const playPromise = startJingle.play();
+            if (playPromise !== undefined) {
+                await playPromise;
+                startJingle.pause();
+                startJingle.currentTime = 0;
+            }
+        }
         
-        await silentAudio.play();
-        silentAudio.pause();
+        if (gameOverSound) {
+            const playPromise = gameOverSound.play();
+            if (playPromise !== undefined) {
+                await playPromise;
+                gameOverSound.pause();
+                gameOverSound.currentTime = 0;
+            }
+        }
         
         audioUnlocked = true;
-        console.log('Audio context unlocked');
+        console.log('Audio unlocked successfully');
         return true;
     } catch (e) {
-        console.log('Failed to unlock audio:', e);
+        console.log('Audio unlock failed:', e);
+        // Still set to true as some browsers might not support the test
+        audioUnlocked = true;
         return false;
     }
 }
 
-/*function playStartJingle() {
-    if (startJingle) {
-        // Reset the sound to beginning in case it's already playing
-        startJingle.currentTime = 0;
-        
-        // Play the sound (wrap in try-catch for browser compatibility)
-        try {
-            startJingle.play().catch(e => {
-                console.log('Could not play start jingle:', e);
-            });
-        } catch (e) {
-            console.log('Audio not supported:', e);
-        }
-    }
-}*/
-
-/*function playStartJingle() {
-    if (startJingle) {
-        // Try to initialize audio first if not done already
-        if (!audioInitialized) {
-            initializeAudio();
-        }
-        
-        // Reset the sound to beginning in case it's already playing
-        startJingle.currentTime = 0;
-        
-        // Play the sound (wrap in try-catch for browser compatibility)
-        try {
-            startJingle.play().catch(e => {
-                console.log('Could not play start jingle:', e);
-                // Try initializing audio and playing again
-                if (!audioInitialized) {
-                    initializeAudio();
-                    setTimeout(() => {
-                        startJingle.play().catch(e2 => {
-                            console.log('Second attempt to play start jingle failed:', e2);
-                        });
-                    }, 100);
-                }
-            });
-        } catch (e) {
-            console.log('Audio not supported:', e);
-        }
-    }
-}*/
-
 async function playStartJingle() {
-    console.log('Attempting to play start jingle...');
-    
-    if (!startJingle) {
-        console.log('Start jingle not initialized');
-        return;
-    }
+    if (!startJingle || !audioUnlocked) return;
     
     try {
-        // Ensure audio is unlocked first
-        await unlockAudio();
-        
-        // Reset the audio to beginning
         startJingle.currentTime = 0;
-        
-        // Wait for the audio to be ready if it's not already
-        if (startJingle.readyState < 3) { // HAVE_FUTURE_DATA
-            console.log('Waiting for audio to load...');
-            await new Promise((resolve, reject) => {
-                const onCanPlay = () => {
-                    startJingle.removeEventListener('canplaythrough', onCanPlay);
-                    startJingle.removeEventListener('error', onError);
-                    resolve();
-                };
-                const onError = (e) => {
-                    startJingle.removeEventListener('canplaythrough', onCanPlay);
-                    startJingle.removeEventListener('error', onError);
-                    reject(e);
-                };
-                startJingle.addEventListener('canplaythrough', onCanPlay);
-                startJingle.addEventListener('error', onError);
-            });
-        }
-        
-        // Now try to play
         await startJingle.play();
-        console.log('Start jingle playing successfully');
-        
+        console.log('Start jingle playing');
     } catch (e) {
         console.log('Could not play start jingle:', e);
     }
@@ -283,12 +187,6 @@ setScreen();
 //Initialize the sounds
 createSounds();
 
-// Play the start jingle when the page loads
-// Add a small delay to ensure everything is loaded
-/*setTimeout(() => {
-    playStartJingle();
-}, 500);*/
-
 //Use setTimeout on Safari mobile rotation otherwise works fine on desktop
 //Dynamically resizes the screen if size changes
 window.addEventListener('resize', ()=>setTimeout(setScreen, 500));
@@ -327,28 +225,16 @@ function showGameOver(){
     ctx.fillText("GAME OVER", x, y);
 }
 
-function setupGameReset(){
-    if(!hasAddedEventListenersForRestart){
-        hasAddedEventListenersForRestart = true;
-
-        setTimeout(()=>{
-            window.addEventListener("keyup", async (e) => {
-                await unlockAudio();
-                reset();
-            }, { once: true });
-            
-            // iOS-specific touch events - use touchend instead of touchstart
-            window.addEventListener("touchend", async (e) => {
-                e.preventDefault(); // Prevent iOS from interfering
-                await unlockAudio();
-                reset();
-            }, { once: true, passive: false });
-        }, 1000);
+async function handleGameStart() {
+    // Unlock audio on first user interaction
+    await unlockAudio();
+    
+    if (waitingToStart || gameOver) {
+        await reset();
     }
 }
 
 async function reset(){
-    hasAddedEventListenersForRestart = false;
     gameOver = false;
 
     // Play the start jingle when the game begins (user has interacted)
@@ -366,7 +252,6 @@ async function reset(){
 
 function showStartGameText() {
     const fontSize = 20 * scaleRatio;
-    //ctx.font = `${fontSize}px Verdana`;
     ctx.font = `${fontSize}px "Press Start 2P", monospace`;
     ctx.fillStyle = "white";
     const x = canvas.width / 10;
@@ -384,7 +269,6 @@ function clearScreen(){
 }
 
 function gameLoop(currentTime) {
-    //console.log(gameSpeed)
     //Makes sure game runs at same time regardless of hardware
     if(previousTime === null){
         previousTime = currentTime;
@@ -409,7 +293,6 @@ function gameLoop(currentTime) {
         gameOver = true;
         player.setLoseSprite(); // Change sprite to gameover sprite
         playGameOverSound();
-        setupGameReset();
         score.setHighScore();
     };
 
@@ -429,61 +312,65 @@ function gameLoop(currentTime) {
 
     requestAnimationFrame(gameLoop);
 }
+
+// Start the game loop
 requestAnimationFrame(gameLoop);
 
-window.addEventListener("keyup", async (e) => {
-    if (waitingToStart || gameOver) {
-        await unlockAudio();
-        reset();
-    }
-}, { once: true });
-
-// Use touchend instead of touchstart for better iOS compatibility
-window.addEventListener("touchend", async (e) => {
-    if (waitingToStart || gameOver) {
-        e.preventDefault(); // Prevent iOS scroll/zoom behavior
-        await unlockAudio();
-        reset();
-    }
-}, { once: true, passive: false });
-
-// Additional iOS-specific event listeners for better compatibility
-window.addEventListener("click", async (e) => {
-    if (waitingToStart || gameOver) {
+// Single set of event listeners that handle all cases
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
         e.preventDefault();
-        await unlockAudio();
-        reset();
+        handleGameStart();
     }
-}, { once: true });
+});
 
-// Prevent iOS Safari from showing the address bar on touch
-document.addEventListener('touchstart', function(e) {
-    // Prevent default only if the game is in focus
-    if (e.target === canvas || canvas.contains(e.target)) {
+document.addEventListener('click', (e) => {
+    // Only handle clicks on the canvas
+    if (e.target === canvas) {
+        e.preventDefault();
+        handleGameStart();
+    }
+});
+
+document.addEventListener('touchstart', (e) => {
+    // Only handle touches on the canvas
+    if (e.target === canvas) {
+        e.preventDefault();
+        handleGameStart();
+    }
+}, { passive: false });
+
+// Prevent iOS Safari from interfering with the game
+document.addEventListener('touchend', (e) => {
+    if (e.target === canvas) {
         e.preventDefault();
     }
 }, { passive: false });
 
-document.addEventListener('touchend', function(e) {
-    if (e.target === canvas || canvas.contains(e.target)) {
+document.addEventListener('touchmove', (e) => {
+    if (e.target === canvas) {
         e.preventDefault();
     }
 }, { passive: false });
 
-document.addEventListener('touchmove', function(e) {
-    if (e.target === canvas || canvas.contains(e.target)) {
+// Prevent context menu on long press (iOS/Android)
+document.addEventListener('contextmenu', (e) => {
+    if (e.target === canvas) {
         e.preventDefault();
     }
-}, { passive: false });
+});
 
-// Modified event listeners to ensure proper audio unlock
-window.addEventListener("keyup", async (e) => {
-    await unlockAudio();
-    reset();
-}, { once: true });
+// Handle iOS viewport changes
+window.addEventListener('orientationchange', () => {
+    setTimeout(setScreen, 500);
+});
 
-window.addEventListener("touchstart", async (e) => {
-    await unlockAudio();
-    reset();
-}, { once: true });
-/*window.addEventListener("touchstart", reset,{ once:true });*/
+// Prevent iOS zoom on double tap
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
