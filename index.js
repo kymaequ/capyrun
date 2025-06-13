@@ -337,10 +337,12 @@ function setupGameReset(){
                 reset();
             }, { once: true });
             
-            window.addEventListener("touchstart", async (e) => {
+            // iOS-specific touch events - use touchend instead of touchstart
+            window.addEventListener("touchend", async (e) => {
+                e.preventDefault(); // Prevent iOS from interfering
                 await unlockAudio();
                 reset();
-            }, { once: true });
+            }, { once: true, passive: false });
         }, 1000);
     }
 }
@@ -428,6 +430,51 @@ function gameLoop(currentTime) {
     requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
+
+window.addEventListener("keyup", async (e) => {
+    if (waitingToStart || gameOver) {
+        await unlockAudio();
+        reset();
+    }
+}, { once: true });
+
+// Use touchend instead of touchstart for better iOS compatibility
+window.addEventListener("touchend", async (e) => {
+    if (waitingToStart || gameOver) {
+        e.preventDefault(); // Prevent iOS scroll/zoom behavior
+        await unlockAudio();
+        reset();
+    }
+}, { once: true, passive: false });
+
+// Additional iOS-specific event listeners for better compatibility
+window.addEventListener("click", async (e) => {
+    if (waitingToStart || gameOver) {
+        e.preventDefault();
+        await unlockAudio();
+        reset();
+    }
+}, { once: true });
+
+// Prevent iOS Safari from showing the address bar on touch
+document.addEventListener('touchstart', function(e) {
+    // Prevent default only if the game is in focus
+    if (e.target === canvas || canvas.contains(e.target)) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', function(e) {
+    if (e.target === canvas || canvas.contains(e.target)) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+    if (e.target === canvas || canvas.contains(e.target)) {
+        e.preventDefault();
+    }
+}, { passive: false });
 
 // Modified event listeners to ensure proper audio unlock
 window.addEventListener("keyup", async (e) => {
